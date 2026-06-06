@@ -18,8 +18,10 @@ RUN bun run --cwd frontend build
 # ==========================================
 # Runtime Stage: Python & PyTorch Backend
 # ==========================================
-FROM pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime AS runtime
+FROM python:3.12-slim AS runtime
 WORKDIR /app
+
+RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Enable unbuffered logs and optimizations
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -68,5 +70,9 @@ EXPOSE 3900
 # Mount points for persistent data (sqlite db, user voices, huggingface cache)
 VOLUME ["/app/omnivoice_data"]
 
-# Bind to 0.0.0.0 for external access
-ENTRYPOINT ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "3900"]
+cd /app && python -m backend.mcp_server --sse --port 8765 &
+exec uvicorn backend.main:app --host 0.0.0.0 --port 3900
+
+COPY deploy/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
