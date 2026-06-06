@@ -64,15 +64,13 @@ COPY omnivoice/ ./omnivoice/
 # Copy the pre-built React frontend from the builder stage
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Expose the single unified API and UI port
-EXPOSE 3900
-
 # Mount points for persistent data (sqlite db, user voices, huggingface cache)
 VOLUME ["/app/omnivoice_data"]
 
-cd /app && python -m backend.mcp_server --sse --port 8765 &
-exec uvicorn backend.main:app --host 0.0.0.0 --port 3900
-
 COPY deploy/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 3900
+EXPOSE 8765
+
 ENTRYPOINT ["/app/entrypoint.sh"]
