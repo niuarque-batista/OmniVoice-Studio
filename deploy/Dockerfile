@@ -21,8 +21,6 @@ RUN bun run --cwd frontend build
 FROM python:3.12-slim AS runtime
 WORKDIR /app
 
-RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-
 # Enable unbuffered logs and optimizations
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -55,7 +53,8 @@ COPY pyproject.toml uv.lock README.md ./
 
 # Install the project (non-editable — no need for -e in containers).
 # Uses `uv` for exponentially faster resolution than plain pip.
-RUN uv pip install --system --no-cache .  
+RUN uv pip install --system --no-cache torch torchaudio --index-url https://download.pytorch.org/whl/cpu \
+    && uv pip install --system --no-cache .
 
 # Copy application source
 COPY backend/ ./backend/
